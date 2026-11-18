@@ -27,6 +27,7 @@ public class EasyScheduleDbContext(DbContextOptions<EasyScheduleDbContext> optio
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<StudyPlan> StudyPlans => Set<StudyPlan>();
     public DbSet<StudyPlanSection> StudyPlanSections => Set<StudyPlanSection>();
+    public DbSet<StudyPlanSubject> StudyPlanSubjects => Set<StudyPlanSubject>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonTeacher> LessonTeachers => Set<LessonTeacher>();
     public DbSet<LessonGroup> LessonGroups => Set<LessonGroup>();
@@ -66,6 +67,8 @@ public class EasyScheduleDbContext(DbContextOptions<EasyScheduleDbContext> optio
         b.Entity<StudyPlanSection>().HasOne(x => x.Section).WithMany(s => s.StudyPlans)
             .HasForeignKey(x => x.SectionId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<StudyPlanSection>().HasOne(x => x.StudyPlan).WithMany(p => p.Sections)
+            .HasForeignKey(x => x.StudyPlanId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<StudyPlanSubject>().HasOne(x => x.StudyPlan).WithMany(p => p.Subjects)
             .HasForeignKey(x => x.StudyPlanId).OnDelete(DeleteBehavior.Cascade);
 
         // Global query filter ตาม SchoolId ทุก entity ที่เป็น ITenantEntity

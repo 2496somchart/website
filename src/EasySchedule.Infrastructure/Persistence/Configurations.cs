@@ -49,8 +49,11 @@ internal sealed class ClassLevelConfig : IEntityTypeConfiguration<ClassLevel>
 
 internal sealed class ClassSectionConfig : IEntityTypeConfiguration<ClassSection>
 {
-    public void Configure(EntityTypeBuilder<ClassSection> e) =>
+    public void Configure(EntityTypeBuilder<ClassSection> e)
+    {
         e.HasIndex(x => new { x.LevelId, x.SectionNo }).IsUnique();
+        e.HasOne(x => x.Homeroom).WithMany().HasForeignKey(x => x.HomeroomId);
+    }
 }
 
 internal sealed class BreakSlotConfig : IEntityTypeConfiguration<BreakSlot>
@@ -88,7 +91,7 @@ internal sealed class SubjectConfig : IEntityTypeConfiguration<Subject>
         e.Property(x => x.Title).HasMaxLength(200);
         e.Property(x => x.SubjectGroup).HasMaxLength(4);
         e.Property(x => x.Credits).HasPrecision(4, 1);
-        e.HasIndex(x => new { x.TermId, x.Code }).IsUnique();
+        e.HasIndex(x => new { x.SchoolId, x.Code }).IsUnique();
     }
 }
 
@@ -97,8 +100,14 @@ internal sealed class StudyPlanConfig : IEntityTypeConfiguration<StudyPlan>
     public void Configure(EntityTypeBuilder<StudyPlan> e)
     {
         e.Property(x => x.Name).HasMaxLength(100);
-        e.HasIndex(x => new { x.TermId, x.Name }).IsUnique();
+        e.HasIndex(x => new { x.SchoolId, x.Name }).IsUnique();
     }
+}
+
+internal sealed class StudyPlanSubjectConfig : IEntityTypeConfiguration<StudyPlanSubject>
+{
+    public void Configure(EntityTypeBuilder<StudyPlanSubject> e) =>
+        e.HasIndex(x => new { x.StudyPlanId, x.LevelCode, x.Semester, x.SubjectId }).IsUnique();
 }
 
 internal sealed class StudyPlanSectionConfig : IEntityTypeConfiguration<StudyPlanSection>

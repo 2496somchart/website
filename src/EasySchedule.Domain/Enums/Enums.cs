@@ -39,6 +39,31 @@ public static class LoadTypeExtensions
     public static bool IsTeacherReservation(this LoadType type) => type is LoadType.TeamTeaching or LoadType.Personal;
 }
 
+/// <summary>ประเภทรายวิชาตามหลักสูตร</summary>
+public enum SubjectCategory
+{
+    /// <summary>รายวิชาพื้นฐาน — เรียนตามเทอมที่กำหนดในแผน</summary>
+    Basic = 1,
+    /// <summary>รายวิชาเพิ่มเติม — โรงเรียนจัดเอง</summary>
+    Additional = 2,
+    /// <summary>รายวิชาเพิ่มเติมเลือก — นักเรียนเลือก</summary>
+    AdditionalElective = 3,
+    /// <summary>กิจกรรมพัฒนาผู้เรียน</summary>
+    Activity = 4,
+}
+
+public static class SubjectCategoryExtensions
+{
+    public static string ToThai(this SubjectCategory c) => c switch
+    {
+        SubjectCategory.Basic => "พื้นฐาน",
+        SubjectCategory.Additional => "เพิ่มเติม",
+        SubjectCategory.AdditionalElective => "เพิ่มเติมเลือก",
+        SubjectCategory.Activity => "กิจกรรมพัฒนาผู้เรียน",
+        _ => throw new ArgumentOutOfRangeException(nameof(c), c, null),
+    };
+}
+
 public enum UserRole
 {
     SuperAdmin = 1,

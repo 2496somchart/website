@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddDbContext<EasyScheduleDbContext>(o => o.UseSqlServer(cs, sql => sql.EnableRetryOnFailure()));
         services.AddSingleton<IPasswordService, PasswordService>();
         services.Configure<SeedOptions>(config.GetSection(SeedOptions.Section));
+        services.Configure<BootstrapOptions>(config.GetSection(BootstrapOptions.Section));
         return services;
     }
 
@@ -65,6 +66,13 @@ public static class DependencyInjection
 
         if (migrate)
             await db.Database.MigrateAsync(ct);
+
+        var bootstrap = sp.GetRequiredService<IOptions<BootstrapOptions>>().Value;
+        if (await UserBootstrapper.EnsureFirstSuperAdminAsync(db, sp.GetRequiredService<IPasswordService>(),
+                bootstrap.SuperAdminUsername, bootstrap.SuperAdminPassword, ct))
+        {
+            sp.GetRequiredService<ILogger<DataSeeder>>().LogInformation("Created first SuperAdmin '{User}'", bootstrap.SuperAdminUsername);
+        }
 
         var seed = sp.GetRequiredService<IOptions<SeedOptions>>().Value;
         if (seed.Enabled)

@@ -21,22 +21,40 @@ services:
       retries: 30
       start_period: 20s
 
+  # สร้างฐาน + login เฉพาะแอปด้วย sa แล้วจบ — API ไม่ใช้ sa
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      APP_DB_PASSWORD: ${DB_APP_PASSWORD:?ตั้งค่า DB_APP_PASSWORD ใน .env}
+    volumes:
+      - ./deploy/db-init.sql:/db-init.sql:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - /opt/mssql-tools18/bin/sqlcmd -C -b -S db -U sa -P "$$MSSQL_SA_PASSWORD" -i /db-init.sql -v AppLogin=easyschedule_app AppSecret="$$APP_DB_PASSWORD"
+    restart: "no"
+
   api:
     build:
       context: .
       dockerfile: src/EasySchedule.Api/Dockerfile
     depends_on:
-      db:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     environment:
       Database__Server: db
       Database__Name: EasyScheduleWeb
-      Database__User: sa
-      Database__Password: ${MSSQL_SA_PASSWORD}
+      Database__User: easyschedule_app
+      Database__Password: ${DB_APP_PASSWORD}
       Database__MigrateOnStartup: "true"
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?ตั้งค่า JWT_SIGNING_KEY ใน .env (อย่างน้อย 32 ตัวอักษร)}
       Seed__Enabled: ${SEED_ENABLED:-true}
       Seed__UserPassword: ${SEED_USER_PASSWORD:-}
+      Bootstrap__SuperAdminPassword: ${BOOTSTRAP_SUPERADMIN_PASSWORD:-}
       Swagger__Enabled: ${SWAGGER_ENABLED:-true}
     restart: unless-stopped
 

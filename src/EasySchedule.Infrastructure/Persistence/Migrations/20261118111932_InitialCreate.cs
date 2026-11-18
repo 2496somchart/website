@@ -50,6 +50,52 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "StudyPlans",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    SchoolId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StudyPlans", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StudyPlans_Schools_SchoolId",
+                        column: x => x.SchoolId,
+                        principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Subjects",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Category = table.Column<int>(type: "int", nullable: false),
+                    SubjectGroup = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: false),
+                    Credits = table.Column<decimal>(type: "decimal(4,1)", precision: 4, scale: 1, nullable: false),
+                    PPW = table.Column<int>(type: "int", nullable: false),
+                    PT = table.Column<int>(type: "int", nullable: false),
+                    SchoolId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Subjects", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Subjects_Schools_SchoolId",
+                        column: x => x.SchoolId,
+                        principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Terms",
                 columns: table => new
                 {
@@ -92,6 +138,42 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         name: "FK_Users_Schools_SchoolId",
                         column: x => x.SchoolId,
                         principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StudyPlanSubjects",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudyPlanId = table.Column<int>(type: "int", nullable: false),
+                    LevelCode = table.Column<int>(type: "int", nullable: false),
+                    Semester = table.Column<int>(type: "int", nullable: false),
+                    SubjectId = table.Column<int>(type: "int", nullable: false),
+                    PPW = table.Column<int>(type: "int", nullable: true),
+                    SchoolId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StudyPlanSubjects", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StudyPlanSubjects_Schools_SchoolId",
+                        column: x => x.SchoolId,
+                        principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_StudyPlanSubjects_StudyPlans_StudyPlanId",
+                        column: x => x.StudyPlanId,
+                        principalTable: "StudyPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StudyPlanSubjects_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -214,58 +296,40 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "StudyPlans",
+                name: "SubjectRules",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Subject1Id = table.Column<int>(type: "int", nullable: false),
+                    Subject2Id = table.Column<int>(type: "int", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(1)", maxLength: 1, nullable: false),
                     SchoolId = table.Column<int>(type: "int", nullable: false),
                     TermId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StudyPlans", x => x.Id);
+                    table.PrimaryKey("PK_SubjectRules", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StudyPlans_Schools_SchoolId",
+                        name: "FK_SubjectRules_Schools_SchoolId",
                         column: x => x.SchoolId,
                         principalTable: "Schools",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_StudyPlans_Terms_TermId",
-                        column: x => x.TermId,
-                        principalTable: "Terms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Subjects",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Code = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    SubjectGroup = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: false),
-                    Credits = table.Column<decimal>(type: "decimal(4,1)", precision: 4, scale: 1, nullable: false),
-                    PPW = table.Column<int>(type: "int", nullable: false),
-                    PT = table.Column<int>(type: "int", nullable: false),
-                    SchoolId = table.Column<int>(type: "int", nullable: false),
-                    TermId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Subjects", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Subjects_Schools_SchoolId",
-                        column: x => x.SchoolId,
-                        principalTable: "Schools",
+                        name: "FK_SubjectRules_Subjects_Subject1Id",
+                        column: x => x.Subject1Id,
+                        principalTable: "Subjects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Subjects_Terms_TermId",
+                        name: "FK_SubjectRules_Subjects_Subject2Id",
+                        column: x => x.Subject2Id,
+                        principalTable: "Subjects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SubjectRules_Terms_TermId",
                         column: x => x.TermId,
                         principalTable: "Terms",
                         principalColumn: "Id",
@@ -295,6 +359,47 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Teachers_Terms_TermId",
+                        column: x => x.TermId,
+                        principalTable: "Terms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClassSections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LevelId = table.Column<int>(type: "int", nullable: false),
+                    SectionNo = table.Column<int>(type: "int", nullable: false),
+                    HomeroomId = table.Column<int>(type: "int", nullable: true),
+                    SchoolId = table.Column<int>(type: "int", nullable: false),
+                    TermId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassSections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClassSections_ClassLevels_LevelId",
+                        column: x => x.LevelId,
+                        principalTable: "ClassLevels",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSections_Rooms_HomeroomId",
+                        column: x => x.HomeroomId,
+                        principalTable: "Rooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSections_Schools_SchoolId",
+                        column: x => x.SchoolId,
+                        principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSections_Terms_TermId",
                         column: x => x.TermId,
                         principalTable: "Terms",
                         principalColumn: "Id",
@@ -376,88 +481,6 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         name: "FK_Snapshots_Users_CreatedBy",
                         column: x => x.CreatedBy,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SubjectRules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Subject1Id = table.Column<int>(type: "int", nullable: false),
-                    Subject2Id = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(1)", maxLength: 1, nullable: false),
-                    SchoolId = table.Column<int>(type: "int", nullable: false),
-                    TermId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SubjectRules", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SubjectRules_Schools_SchoolId",
-                        column: x => x.SchoolId,
-                        principalTable: "Schools",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SubjectRules_Subjects_Subject1Id",
-                        column: x => x.Subject1Id,
-                        principalTable: "Subjects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SubjectRules_Subjects_Subject2Id",
-                        column: x => x.Subject2Id,
-                        principalTable: "Subjects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SubjectRules_Terms_TermId",
-                        column: x => x.TermId,
-                        principalTable: "Terms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ClassSections",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    LevelId = table.Column<int>(type: "int", nullable: false),
-                    SectionNo = table.Column<int>(type: "int", nullable: false),
-                    HomeroomId = table.Column<int>(type: "int", nullable: true),
-                    SchoolId = table.Column<int>(type: "int", nullable: false),
-                    TermId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClassSections", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ClassSections_ClassLevels_LevelId",
-                        column: x => x.LevelId,
-                        principalTable: "ClassLevels",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ClassSections_Schools_SchoolId",
-                        column: x => x.SchoolId,
-                        principalTable: "Schools",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ClassSections_Teachers_HomeroomId",
-                        column: x => x.HomeroomId,
-                        principalTable: "Teachers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ClassSections_Terms_TermId",
-                        column: x => x.TermId,
-                        principalTable: "Terms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -966,20 +989,31 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 column: "TermId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StudyPlans_SchoolId",
+                name: "IX_StudyPlans_SchoolId_Name",
                 table: "StudyPlans",
-                column: "SchoolId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_StudyPlans_TermId_Name",
-                table: "StudyPlans",
-                columns: new[] { "TermId", "Name" },
+                columns: new[] { "SchoolId", "Name" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StudyPlanSections_SectionId",
                 table: "StudyPlanSections",
                 column: "SectionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudyPlanSubjects_SchoolId",
+                table: "StudyPlanSubjects",
+                column: "SchoolId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudyPlanSubjects_StudyPlanId_LevelCode_Semester_SubjectId",
+                table: "StudyPlanSubjects",
+                columns: new[] { "StudyPlanId", "LevelCode", "Semester", "SubjectId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudyPlanSubjects_SubjectId",
+                table: "StudyPlanSubjects",
+                column: "SubjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubjectRules_SchoolId",
@@ -1002,14 +1036,9 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 column: "TermId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Subjects_SchoolId",
+                name: "IX_Subjects_SchoolId_Code",
                 table: "Subjects",
-                column: "SchoolId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Subjects_TermId_Code",
-                table: "Subjects",
-                columns: new[] { "TermId", "Code" },
+                columns: new[] { "SchoolId", "Code" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1066,6 +1095,9 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 name: "StudyPlanSections");
 
             migrationBuilder.DropTable(
+                name: "StudyPlanSubjects");
+
+            migrationBuilder.DropTable(
                 name: "SubjectRules");
 
             migrationBuilder.DropTable(
@@ -1075,13 +1107,13 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 name: "Snapshots");
 
             migrationBuilder.DropTable(
+                name: "Teachers");
+
+            migrationBuilder.DropTable(
                 name: "ClassSections");
 
             migrationBuilder.DropTable(
                 name: "LessonGroups");
-
-            migrationBuilder.DropTable(
-                name: "Rooms");
 
             migrationBuilder.DropTable(
                 name: "StudyPlans");
@@ -1099,7 +1131,7 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                 name: "ClassLevels");
 
             migrationBuilder.DropTable(
-                name: "Teachers");
+                name: "Rooms");
 
             migrationBuilder.DropTable(
                 name: "Terms");

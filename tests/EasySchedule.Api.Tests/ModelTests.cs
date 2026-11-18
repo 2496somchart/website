@@ -23,9 +23,18 @@ public sealed class ModelTests(ApiFixture fx)
     [Fact]
     public void Every_scheduling_table_has_school_and_term()
     {
-        // SPEC ข้อ 3: ทุกตารางมี SchoolId + TermId (ยกเว้น School/Term เอง, ตารางเชื่อม และ User/AuditLog)
+        // SPEC ข้อ 3: ทุกตารางมี SchoolId + TermId — ยกเว้น School/Term เอง, ตารางเชื่อม, User/AuditLog
+        // และรายวิชา/แผนการเรียนซึ่งเป็นข้อมูลระดับโรงเรียนตามที่ผู้ใช้ตัดสิน (DECISIONS D-003)
         using var db = fx.CreateDb(SystemTenantContext.Instance);
-        string[] exempt = [nameof(School), nameof(Term), nameof(User), nameof(AuditLog), nameof(LessonTeacher), nameof(StudyPlanSection)];
+        string[] exempt = [nameof(School),
+            nameof(Term),
+            nameof(User),
+            nameof(AuditLog),
+            nameof(LessonTeacher),
+            nameof(StudyPlanSection),
+            nameof(Subject),
+            nameof(StudyPlan),
+            nameof(StudyPlanSubject)];
         var missing = db.Model.GetEntityTypes()
             .Where(t => !exempt.Contains(t.ClrType.Name))
             .Where(t => t.FindProperty("SchoolId") is null || t.FindProperty("TermId") is null)
@@ -42,7 +51,7 @@ public sealed class ModelTests(ApiFixture fx)
             .Select(fk => $"{fk.DeclaringEntityType.ClrType.Name}->{fk.PrincipalEntityType.ClrType.Name}");
         cascades.Should().BeEquivalentTo(
             "BreakSlot->ClassSection", "Lesson->ClassSection", "LessonTeacher->Lesson",
-            "Placement->Lesson", "Placement->Snapshot", "StudyPlanSection->ClassSection", "StudyPlanSection->StudyPlan");
+            "Placement->Lesson", "Placement->Snapshot", "StudyPlanSection->ClassSection", "StudyPlanSection->StudyPlan", "StudyPlanSubject->StudyPlan");
     }
 
     [Fact]
@@ -127,7 +136,11 @@ public sealed class ModelTests(ApiFixture fx)
         breaks0.Should().HaveCount(6 * 5);
         breaks0.Select(b => b.PeriodNo).Distinct().Should().ContainSingle().Which.Should().Be(DataSeeder.DefaultBreakPeriodMode0);
 
-        (await db.StudyPlanSections.CountAsync(s => s.SchoolId == schoolId)).Should().Be(2);
+        // แผนการเรียน: ม.ต้น ทั่วไป (2 ห้อง ม.1, 8 วิชาพื้นฐาน ม.1 เทอม 1) + ม.4 ห้องละแผน
+        (await db.StudyPlanSections.CountAsync(s => s.SchoolId == schoolId)).Should().Be(4);
+        var planSubjects = await db.StudyPlanSubjects.Include(x => x.Subject).Where(x => x.SchoolId == schoolId).ToListAsync();
+        planSubjects.Should().HaveCount(8).And.OnlyContain(x => x.LevelCode == 21 && x.Semester == 1
+                                                               && x.Subject!.Category == SubjectCategory.Basic);
     }
 
     private async Task<(int School, int Term, int Section, int Subject, int Mode)> SampleAsync()

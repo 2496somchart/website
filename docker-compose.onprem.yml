@@ -2,9 +2,23 @@
 #   docker compose -f docker-compose.yml -f docker-compose.onprem.yml up -d --build
 # - ใช้ SQL Server Express (ฟรี, จำกัด 10 GB ต่อฐานข้อมูล)
 # - ปิด Swagger และ seed ข้อมูลตัวอย่างโดยค่าเริ่มต้น
+# - ติดตั้งครั้งแรก: ตั้ง BOOTSTRAP_SUPERADMIN_PASSWORD ใน .env → ระบบสร้าง superadmin ให้เมื่อยังไม่มีผู้ใช้
+#   (ครั้งต่อไปไม่มีผล ลบค่าออกจาก .env ได้หลังติดตั้ง)
 # - เก็บข้อมูลไว้ในโฟลเดอร์บนเครื่อง (สำรองง่าย) และ restart อัตโนมัติเมื่อเปิดเครื่อง
 services:
+  # SQL Server ในคอนเทนเนอร์รันเป็น user mssql (uid 10001) — ให้สิทธิ์โฟลเดอร์ข้อมูลบนเครื่องก่อนเริ่ม
+  db-data-perms:
+    image: busybox:1.36
+    user: "0:0"
+    command: ["sh", "-c", "mkdir -p /data && chown -R 10001:0 /data"]
+    volumes:
+      - ${DATA_DIR:-./data}/mssql:/data
+    restart: "no"
+
   db:
+    depends_on:
+      db-data-perms:
+        condition: service_completed_successfully
     environment:
       MSSQL_PID: ${MSSQL_PID:-Express}
       MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB:-2048}

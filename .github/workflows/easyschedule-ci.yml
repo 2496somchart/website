@@ -57,6 +57,7 @@ jobs:
           # values are generated per run; nothing secret lives in the repo
           {
             printf '%s=%s\n' MSSQL_SA_PASSWORD "Ci-$(openssl rand -hex 12)-Aa1!"
+            printf '%s=%s\n' DB_APP_PASSWORD "Ci-$(openssl rand -hex 12)-Aa1!"
             printf '%s=%s\n' JWT_SIGNING_KEY "$(openssl rand -hex 32)"
             printf '%s=%s\n' SEED_USER_PASSWORD "Ci-$(openssl rand -hex 8)-Aa1!"
           } > .env

@@ -7,9 +7,9 @@ public class ClassSection : TermEntity
     public ClassLevel? Level { get; set; }
     public int SectionNo { get; set; }
 
-    /// <summary>ครูประจำชั้น</summary>
+    /// <summary>ห้องเรียนประจำ (Room)</summary>
     public int? HomeroomId { get; set; }
-    public Teacher? Homeroom { get; set; }
+    public Room? Homeroom { get; set; }
 
     public List<StudyPlanSection> StudyPlans { get; set; } = [];
 }

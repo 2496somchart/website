@@ -625,14 +625,9 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                     b.Property<int>("SchoolId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TermId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("SchoolId");
-
-                    b.HasIndex("TermId", "Name")
+                    b.HasIndex("SchoolId", "Name")
                         .IsUnique();
 
                     b.ToTable("StudyPlans");
@@ -656,6 +651,44 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                     b.ToTable("StudyPlanSections");
                 });
 
+            modelBuilder.Entity("EasySchedule.Domain.Entities.StudyPlanSubject", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LevelCode")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PPW")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SchoolId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Semester")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudyPlanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SchoolId");
+
+                    b.HasIndex("SubjectId");
+
+                    b.HasIndex("StudyPlanId", "LevelCode", "Semester", "SubjectId")
+                        .IsUnique();
+
+                    b.ToTable("StudyPlanSubjects");
+                });
+
             modelBuilder.Entity("EasySchedule.Domain.Entities.Subject", b =>
                 {
                     b.Property<int>("Id")
@@ -663,6 +696,9 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -687,9 +723,6 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         .HasMaxLength(4)
                         .HasColumnType("nvarchar(4)");
 
-                    b.Property<int>("TermId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -697,9 +730,7 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SchoolId");
-
-                    b.HasIndex("TermId", "Code")
+                    b.HasIndex("SchoolId", "Code")
                         .IsUnique();
 
                     b.ToTable("Subjects");
@@ -909,7 +940,7 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("EasySchedule.Domain.Entities.ClassSection", b =>
                 {
-                    b.HasOne("EasySchedule.Domain.Entities.Teacher", "Homeroom")
+                    b.HasOne("EasySchedule.Domain.Entities.Room", "Homeroom")
                         .WithMany()
                         .HasForeignKey("HomeroomId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1231,15 +1262,7 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EasySchedule.Domain.Entities.Term", "Term")
-                        .WithMany()
-                        .HasForeignKey("TermId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("School");
-
-                    b.Navigation("Term");
                 });
 
             modelBuilder.Entity("EasySchedule.Domain.Entities.StudyPlanSection", b =>
@@ -1261,6 +1284,33 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                     b.Navigation("StudyPlan");
                 });
 
+            modelBuilder.Entity("EasySchedule.Domain.Entities.StudyPlanSubject", b =>
+                {
+                    b.HasOne("EasySchedule.Domain.Entities.School", "School")
+                        .WithMany()
+                        .HasForeignKey("SchoolId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasySchedule.Domain.Entities.StudyPlan", "StudyPlan")
+                        .WithMany("Subjects")
+                        .HasForeignKey("StudyPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EasySchedule.Domain.Entities.Subject", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("School");
+
+                    b.Navigation("StudyPlan");
+
+                    b.Navigation("Subject");
+                });
+
             modelBuilder.Entity("EasySchedule.Domain.Entities.Subject", b =>
                 {
                     b.HasOne("EasySchedule.Domain.Entities.School", "School")
@@ -1269,15 +1319,7 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EasySchedule.Domain.Entities.Term", "Term")
-                        .WithMany()
-                        .HasForeignKey("TermId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("School");
-
-                    b.Navigation("Term");
                 });
 
             modelBuilder.Entity("EasySchedule.Domain.Entities.SubjectRule", b =>
@@ -1388,6 +1430,8 @@ namespace EasySchedule.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EasySchedule.Domain.Entities.StudyPlan", b =>
                 {
                     b.Navigation("Sections");
+
+                    b.Navigation("Subjects");
                 });
 #pragma warning restore 612, 618
         }

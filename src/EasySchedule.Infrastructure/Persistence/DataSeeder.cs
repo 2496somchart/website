@@ -89,20 +89,39 @@ public sealed class DataSeeder(EasyScheduleDbContext db, IPasswordService passwo
             ("ง21101", "การงานอาชีพ", "7", 2),
             ("อ21101", "ภาษาอังกฤษ", "8", 3),
         ];
-        foreach (var (code, title, g, ppw) in subjects)
-            db.Subjects.Add(new Subject { SchoolId = schoolId, Term = term, Code = code, Title = title, SubjectGroup = g, Credits = ppw * 0.5m, PPW = ppw, PT = 1 });
+        var subjectEntities = subjects
+            .Select(x => new Subject
+            {
+                SchoolId = schoolId,
+                Code = x.code,
+                Title = x.title,
+                Category = SubjectCategory.Basic,
+                SubjectGroup = x.g,
+                Credits = x.ppw * 0.5m,
+                PPW = x.ppw,
+                PT = 1,
+            })
+            .ToList();
+        db.Subjects.AddRange(subjectEntities);
 
         db.Rooms.AddRange(
             new Room { SchoolId = schoolId, Term = term, Code = "R101", Name = "ห้อง 101", Type = RoomType.R, Capacity = 40 },
             new Room { SchoolId = schoolId, Term = term, Code = "L201", Name = "ห้องปฏิบัติการวิทยาศาสตร์", Type = RoomType.L, Capacity = 40 });
 
-        // แผนการเรียนเป็นตารางลูก: ม.4/1 = วิทย์-คณิต, ม.4/2 = ศิลป์-ภาษา
+        // แผนการเรียน (ระดับโรงเรียน): ม.ต้น ทั่วไป — วิชาพื้นฐาน ม.1 ภาคเรียนที่ 1 ตามแผน
+        var juniorPlan = new StudyPlan { SchoolId = schoolId, Name = "ม.ต้น ทั่วไป" };
+        foreach (var subject in subjectEntities)
+            juniorPlan.Subjects.Add(new StudyPlanSubject { SchoolId = schoolId, LevelCode = 21, Semester = 1, Subject = subject });
+        foreach (var section in sections.Where(s => s.Level!.Code == 21))
+            juniorPlan.Sections.Add(new StudyPlanSection { SchoolId = schoolId, Section = section });
+
+        // ม.4: ห้องละแผน (ห้องเดียวมีหลายแผนได้ — ตารางลูก ไม่ใช่ string คั่น comma)
         var m4 = sections.Where(s => s.Level!.Code == 34).OrderBy(s => s.SectionNo).ToList();
-        var sciMath = new StudyPlan { SchoolId = schoolId, Term = term, Name = "วิทย์-คณิต" };
+        var sciMath = new StudyPlan { SchoolId = schoolId, Name = "วิทย์-คณิต" };
         sciMath.Sections.Add(new StudyPlanSection { SchoolId = schoolId, Section = m4[0] });
-        var artLang = new StudyPlan { SchoolId = schoolId, Term = term, Name = "ศิลป์-ภาษา" };
+        var artLang = new StudyPlan { SchoolId = schoolId, Name = "ศิลป์-ภาษา" };
         artLang.Sections.Add(new StudyPlanSection { SchoolId = schoolId, Section = m4[1] });
-        db.StudyPlans.AddRange(sciMath, artLang);
+        db.StudyPlans.AddRange(juniorPlan, sciMath, artLang);
 
         await db.SaveChangesAsync(ct);
     }
