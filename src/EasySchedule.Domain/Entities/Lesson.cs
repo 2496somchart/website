@@ -18,6 +18,6 @@ public class Lesson : TenantEntity
     public int PeriodsPerWeek { get; set; }
     /// <summary>จำนวนคาบติดกันต่อครั้ง (1 = ไม่ต้องติดกัน)</summary>
     public int BlockSize { get; set; } = 1;
-    public LoadType LoadType { get; set; } = LoadType.Type1;
+    public LoadType LoadType { get; set; } = LoadType.Teaching;
     public List<LessonTeacher> Teachers { get; set; } = [];
 }

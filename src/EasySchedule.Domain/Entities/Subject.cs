@@ -9,6 +9,6 @@ public class Subject : TenantEntity
     public required string Name { get; set; }
     public string? ShortName { get; set; }
     public string? LearningArea { get; set; }
-    public LoadType DefaultLoadType { get; set; } = LoadType.Type1;
+    public LoadType DefaultLoadType { get; set; } = LoadType.Teaching;
     public string? Color { get; set; }
 }

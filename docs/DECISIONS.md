@@ -8,7 +8,7 @@
 | D-001 | ฐานข้อมูล | SQL Server 2022 (dev: Developer, on-prem: **Express** ฟรี), DB ชื่อ `EasyScheduleWeb` | ชื่อ DB ตาม prompt; ข้อความไทยเก็บใน `nvarchar` ทั้งหมด **[รอ SPEC]** |
 | D-002 | Collation | ฐานข้อมูลสร้างด้วย `Thai_100_CI_AS` (ผ่าน `modelBuilder.UseCollation`) | เรียงลำดับภาษาไทยถูกต้อง; มี test ตรวจ |
 | D-003 | โครง repo | `EasySchedule.sln` ที่ root, `src/EasySchedule.{Domain,Infrastructure,Api}`, `tests/EasySchedule.Tests`, `web/` | ไม่มี CLAUDE.md ข้อ 2 ให้ดู **[รอ CLAUDE.md]** |
-| D-004 | `LoadType` | enum ค่า 1–7 ชื่อกลาง `Type1..Type7` | ยังไม่รู้ความหมายของแต่ละค่า **[รอ SPEC ข้อ 3]** |
+| D-004 | `LoadType` | enum ตาม LoadTypeID ที่ได้รับ: 1 บริหาร (`Administration`), 2 กิจกรรม (`Activity`), 3 สอนคณะ (`TeamTeaching`), 4 ส่วนบุคคล (`Personal`), 5 สอน (`Teaching`), 6 เลือกเสรี (`FreeElective`), 7 พัก (`Break`); เก็บเป็น int, ชื่อไทยผ่าน `LoadType.ToThai()`; ค่าเริ่มต้นของ Lesson/Subject = 5 สอน | ยืนยันโดยผู้ใช้ (2026-11-18); ค่าตัวเลขเก็บใน DB ห้ามเปลี่ยน |
 | D-005 | ฟิลด์ของ entity | ออกแบบเองให้ครอบคลุมการจัดตาราง (ดู `src/EasySchedule.Domain/Entities`) | **[รอ SPEC ข้อ 3]** |
 | D-006 | Multi-tenant | ทุก entity ที่มี `SchoolId` implement `ITenantEntity` → global query filter อัตโนมัติ (`BypassFilter \|\| SchoolId == CurrentSchoolId`); tenant ไม่ทราบ = ไม่เห็นอะไรเลย (fail-closed); `SaveChanges` เติม `SchoolId` ให้และ**ปฏิเสธการเขียนข้ามโรงเรียน**; endpoint ตรวจ `schoolId` ใน URL กับ claim อีกชั้น → 403 | กันข้อมูลรั่ว 2 ชั้น |
 | D-007 | SuperAdmin | `User.SchoolId = null`, ข้าม filter ได้ (เห็นทุกโรงเรียน) | ตาม role ใน prompt |

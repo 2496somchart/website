@@ -1,18 +1,40 @@
 namespace EasySchedule.Domain.Enums;
 
 /// <summary>
-/// ประเภทภาระงานของคาบสอน (ค่า 1-7 ตาม SPEC ข้อ 3).
-/// ชื่อแต่ละค่ายังเป็นชื่อกลาง ๆ เพราะตอนทำ M0 ยังไม่มีไฟล์ SPEC — ดู docs/DECISIONS.md (D-004)
+/// ประเภทภาระงานของครู (LoadTypeID 1-7 ตาม SPEC). ค่าตัวเลขถูกเก็บลงฐานข้อมูล ห้ามเปลี่ยน.
+/// ชื่อภาษาไทยสำหรับแสดงผลอยู่ที่ <see cref="LoadTypeExtensions.ToThai"/>
 /// </summary>
 public enum LoadType
 {
-    Type1 = 1,
-    Type2 = 2,
-    Type3 = 3,
-    Type4 = 4,
-    Type5 = 5,
-    Type6 = 6,
-    Type7 = 7,
+    /// <summary>บริหาร</summary>
+    Administration = 1,
+    /// <summary>กิจกรรม</summary>
+    Activity = 2,
+    /// <summary>สอนคณะ</summary>
+    TeamTeaching = 3,
+    /// <summary>ส่วนบุคคล</summary>
+    Personal = 4,
+    /// <summary>สอน</summary>
+    Teaching = 5,
+    /// <summary>เลือกเสรี</summary>
+    FreeElective = 6,
+    /// <summary>พัก</summary>
+    Break = 7,
+}
+
+public static class LoadTypeExtensions
+{
+    public static string ToThai(this LoadType type) => type switch
+    {
+        LoadType.Administration => "บริหาร",
+        LoadType.Activity => "กิจกรรม",
+        LoadType.TeamTeaching => "สอนคณะ",
+        LoadType.Personal => "ส่วนบุคคล",
+        LoadType.Teaching => "สอน",
+        LoadType.FreeElective => "เลือกเสรี",
+        LoadType.Break => "พัก",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
 }
 
 public enum UserRole

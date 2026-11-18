@@ -24,6 +24,26 @@ public sealed class ModelTests(ApiFixture fx)
         Assert.Equal(Enumerable.Range(1, 7), Enum.GetValues<LoadType>().Select(v => (int)v));
     }
 
+    [Theory]
+    [InlineData(1, "บริหาร")]
+    [InlineData(2, "กิจกรรม")]
+    [InlineData(3, "สอนคณะ")]
+    [InlineData(4, "ส่วนบุคคล")]
+    [InlineData(5, "สอน")]
+    [InlineData(6, "เลือกเสรี")]
+    [InlineData(7, "พัก")]
+    public void LoadType_ids_match_spec_thai_names(int id, string thai)
+    {
+        Assert.Equal(thai, ((LoadType)id).ToThai());
+    }
+
+    [Fact]
+    public void New_lessons_and_subjects_default_to_teaching()
+    {
+        Assert.Equal(LoadType.Teaching, new Lesson().LoadType);
+        Assert.Equal(LoadType.Teaching, new Subject { Code = "X", Name = "X" }.DefaultLoadType);
+    }
+
     [Fact]
     public void Placement_cascades_from_snapshot_and_lesson_only()
     {
