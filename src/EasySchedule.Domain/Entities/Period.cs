@@ -1,11 +1,11 @@
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>คาบเรียนที่ N ของรูปแบบตาราง พร้อมเวลาเริ่ม/จบ</summary>
-public class Period : TenantEntity
+/// <summary>คาบเวลา (= TblPeriod) PeriodNo 0-12, P0 = โฮมรูม</summary>
+public class Period : TermEntity
 {
     public int ScheduleModeId { get; set; }
     public ScheduleMode? ScheduleMode { get; set; }
-    public int Number { get; set; }
-    public TimeOnly StartTime { get; set; }
-    public TimeOnly EndTime { get; set; }
+    public int PeriodNo { get; set; }
+    public TimeOnly Start { get; set; }
+    public TimeOnly End { get; set; }
 }

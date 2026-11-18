@@ -1,13 +1,18 @@
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>แผนการเรียน: ระดับชั้นนี้เรียนวิชานี้กี่คาบ/สัปดาห์ในภาคเรียนนี้</summary>
-public class StudyPlan : TenantEntity
+/// <summary>แผนการเรียน (= PlanTitleList) — ตารางลูก ไม่ใช่ string คั่น comma</summary>
+public class StudyPlan : TermEntity
 {
-    public int TermId { get; set; }
-    public Term? Term { get; set; }
-    public int ClassLevelId { get; set; }
-    public ClassLevel? ClassLevel { get; set; }
-    public int SubjectId { get; set; }
-    public Subject? Subject { get; set; }
-    public int PeriodsPerWeek { get; set; }
+    public required string Name { get; set; }
+    public List<StudyPlanSection> Sections { get; set; } = [];
+}
+
+/// <summary>ห้องเรียนที่อยู่ในแผนการเรียน (ห้องเดียวมีหลายแผนได้)</summary>
+public class StudyPlanSection : ITenantEntity
+{
+    public int SchoolId { get; set; }
+    public int StudyPlanId { get; set; }
+    public StudyPlan? StudyPlan { get; set; }
+    public int SectionId { get; set; }
+    public ClassSection? Section { get; set; }
 }

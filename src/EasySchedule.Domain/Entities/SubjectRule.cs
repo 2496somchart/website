@@ -1,12 +1,13 @@
+using EasySchedule.Domain.Enums;
+
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>กฎการจัดวิชา เช่น ไม่เกิน N คาบ/วัน, ห้ามลงคาบบ่าย</summary>
-public class SubjectRule : TenantEntity
+/// <summary>กฎระหว่างสองวิชา (= TblXPlanConstraint): C ต่อเนื่อง / U ห้ามวันเดียวกัน / S ลำดับ</summary>
+public class SubjectRule : TermEntity
 {
-    public int SubjectId { get; set; }
-    public Subject? Subject { get; set; }
-    public required string RuleType { get; set; }
-    public int? MaxPerDay { get; set; }
-    /// <summary>พารามิเตอร์เพิ่มเติมของกฎในรูป JSON</summary>
-    public string? ParametersJson { get; set; }
+    public int Subject1Id { get; set; }
+    public Subject? Subject1 { get; set; }
+    public int Subject2Id { get; set; }
+    public Subject? Subject2 { get; set; }
+    public SubjectRuleType Type { get; set; }
 }

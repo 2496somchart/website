@@ -1,25 +1,33 @@
-# DECISIONS — บันทึกการตัดสินใจ
+# DECISIONS — ทางเลือกที่ตัดสินเอง + เหตุผล
 
-> หมายเหตุ: ตอนทำ M0 **ไม่มีไฟล์ `CLAUDE.md`, `docs/SPEC.md` (เดิม `Spec.md.md`), `PROGRESS.md`, `DECISIONS.md` และ `PROMPT-M0.md` อยู่ใน repo**
-> (ตรวจทุก branch แล้ว) จึงทำตาม prompt M0 ที่ได้รับในแชท และตัดสินใจเองในจุดที่ SPEC ควรกำหนด — ทุกข้อด้านล่างที่มีป้าย **[รอ SPEC]** ควรถูกทบทวนเมื่อมี SPEC จริง
+Source of truth = `docs/SPEC.md` · กฎการทำงาน = `CLAUDE.md`
 
 | # | เรื่อง | การตัดสินใจ | เหตุผล |
 |---|---|---|---|
-| D-001 | ฐานข้อมูล | SQL Server 2022 (dev: Developer, on-prem: **Express** ฟรี), DB ชื่อ `EasyScheduleWeb` | ชื่อ DB ตาม prompt; ข้อความไทยเก็บใน `nvarchar` ทั้งหมด **[รอ SPEC]** |
-| D-002 | Collation | ฐานข้อมูลสร้างด้วย `Thai_100_CI_AS` (ผ่าน `modelBuilder.UseCollation`) | เรียงลำดับภาษาไทยถูกต้อง; มี test ตรวจ |
-| D-003 | โครง repo | `EasySchedule.sln` ที่ root, `src/EasySchedule.{Domain,Infrastructure,Api}`, `tests/EasySchedule.Tests`, `web/` | ไม่มี CLAUDE.md ข้อ 2 ให้ดู **[รอ CLAUDE.md]** |
-| D-004 | `LoadType` | enum ตาม LoadTypeID ที่ได้รับ: 1 บริหาร (`Administration`), 2 กิจกรรม (`Activity`), 3 สอนคณะ (`TeamTeaching`), 4 ส่วนบุคคล (`Personal`), 5 สอน (`Teaching`), 6 เลือกเสรี (`FreeElective`), 7 พัก (`Break`); เก็บเป็น int, ชื่อไทยผ่าน `LoadType.ToThai()`; ค่าเริ่มต้นของ Lesson/Subject = 5 สอน | ยืนยันโดยผู้ใช้ (2026-11-18); ค่าตัวเลขเก็บใน DB ห้ามเปลี่ยน |
-| D-005 | ฟิลด์ของ entity | ออกแบบเองให้ครอบคลุมการจัดตาราง (ดู `src/EasySchedule.Domain/Entities`) | **[รอ SPEC ข้อ 3]** |
-| D-006 | Multi-tenant | ทุก entity ที่มี `SchoolId` implement `ITenantEntity` → global query filter อัตโนมัติ (`BypassFilter \|\| SchoolId == CurrentSchoolId`); tenant ไม่ทราบ = ไม่เห็นอะไรเลย (fail-closed); `SaveChanges` เติม `SchoolId` ให้และ**ปฏิเสธการเขียนข้ามโรงเรียน**; endpoint ตรวจ `schoolId` ใน URL กับ claim อีกชั้น → 403 | กันข้อมูลรั่ว 2 ชั้น |
-| D-007 | SuperAdmin | `User.SchoolId = null`, ข้าม filter ได้ (เห็นทุกโรงเรียน) | ตาม role ใน prompt |
-| D-008 | Cascade delete | ปิด cascade ทั้งหมด ยกเว้น `Placement→Snapshot`, `Placement→Lesson`, `LessonTeacher→Lesson` | ตาม prompt; กันลบโรงเรียน/ภาคเรียนแล้วข้อมูลหายเป็นทอด ๆ |
-| D-009 | Auth | JWT (HS256) ใน `Authorization: Bearer`, claim `role` + `school_id`; รหัสผ่าน hash ด้วย PBKDF2 ของ ASP.NET Identity `PasswordHasher` | ง่ายสำหรับ on-prem ไม่ต้องพึ่ง IdP ภายนอก |
-| D-010 | ความลับ | ไม่มีรหัสผ่าน/connection string ใน git: compose ประกอบ connection string จาก `Database__Server/User/Password` ที่ดึงจาก `.env`; รหัสผ่าน user ตัวอย่างมาจาก `SEED_USER_PASSWORD`; test สุ่มค่าเองทุกครั้ง | เกณฑ์ M0 |
-| D-011 | Seed | seed ตอน runtime (ไม่ใช้ `HasData`) เมื่อ `Seed__Enabled=true`, idempotent; user ตัวอย่าง `superadmin`, `admin`, `viewer` | ต้องใช้รหัสผ่านจาก env จึงใส่ใน migration ไม่ได้ |
-| D-012 | Migration | API รัน `Migrate()` ตอนเริ่มเมื่อ `Database__MigrateOnStartup=true` (เปิดใน compose) | ติดตั้งในโรงเรียนได้ด้วยคำสั่งเดียว |
-| D-013 | Integration test | Testcontainers (SQL Server จริง) + `WebApplicationFactory`; ตั้ง `ES_TEST_SQLSERVER` เพื่อใช้ server ที่มีอยู่แทน | ทดสอบ Thai round-trip / collation กับ engine จริง ไม่ใช่ SQLite |
-| D-014 | Web | React 18 + Vite 5 + Tailwind 4 + react-router; ฟอนต์ Noto Sans Thai bundle ผ่าน `@fontsource` (ไม่โหลดจาก Google) | on-prem อาจไม่มีอินเทอร์เน็ต |
-| D-015 | Web serving | nginx เสิร์ฟไฟล์ static และ proxy `/api`, `/swagger` ไป API → origin เดียว ไม่ต้องตั้ง CORS | |
-| D-016 | Node image | build stage ใช้ `node:22-bookworm-slim` ไม่ใช่ alpine | rollup บน musl build ไม่ผ่าน ("Code is nested too deeply") |
-| D-017 | E2E | Playwright รันกับ stack จริงจาก `docker compose` (baseURL `E2E_BASE_URL`, ค่าเริ่มต้น `http://localhost:8080`) | ตรวจเกณฑ์ "login → เห็นระดับชั้น" แบบ end-to-end |
-| D-018 | ข้อความ password+`=` ใน repo | `src/docs/deployment/android.md` (เนื้อหาเว็บไซต์ Flutter เดิมของ repo) มีบรรทัด storePassword ตัวอย่างพร้อม placeholder `<password from previous step>` — เป็นเอกสารตัวอย่าง ไม่ใช่ความลับ ไม่ได้แก้ | อยู่นอกขอบเขต M0 |
+| D-001 | DB | SQL Server 2022 (dev: Developer, on-prem: Express), DB `EasyScheduleWeb` เดียว + `SchoolId` | ตาม SPEC ข้อ 2 / CLAUDE.md ข้อ 1 |
+| D-002 | Collation | สร้าง DB ด้วย `Thai_100_CI_AS`; ทุกคอลัมน์ข้อความเป็น `nvarchar` (มี test ตรวจทั้ง schema) | ภาษาไทยไม่เพี้ยน (CLAUDE.md กฎข้อ 6) |
+| D-003 | TermId ทุกตาราง | ทุก entity ยกเว้น `School`, `Term`, `User`, `AuditLog` และตารางเชื่อม (`LessonTeacher`, `StudyPlanSection`) สืบจาก `TermEntity` (มี `SchoolId` + `TermId`) — รวมครู/ห้อง/วิชา | SPEC ข้อ 3 "ทุกตารางมี SchoolId + TermId" และระบบเดิมแยกข้อมูลตาม SchYr/SchTr — ดูคำถามค้างข้อ 2 |
+| D-004 | `LoadType` | enum 1–7: 1 บริหาร (`Administration`), 2 กิจกรรม (`Activity`), 3 สอนคณะ (`TeamTeaching`), 4 ส่วนบุคคล (`Personal`), 5 สอน (`Teaching`), 6 เลือกเสรี (`FreeElective`), 7 พัก (`Break`); เก็บเป็น int; ชื่อไทย `ToThai()`; ค่าเริ่มต้นของ Lesson = 5 | ผู้ใช้ยืนยัน + SPEC ข้อ 3 (คงค่าเดิมเพื่อ import) |
+| D-005 | `Term.TermNo` | ใช้ชื่อ `TermNo` แทน `Term` ตาม SPEC | C# ห้ามมี member ชื่อเดียวกับ class |
+| D-006 | `ScheduleMode.DaysList` | `List<int>` ของ DayNo เก็บเป็น JSON array (EF8 primitive collection) | SPEC ห้าม string คั่น comma; JSON มีชนิดข้อมูลชัด ไม่ต้อง LIKE |
+| D-007 | `ClassLevel.IsAggregate` | คำนวณจาก `Code % 10 == 0` ไม่เก็บใน DB | CLAUDE.md กฎข้อ 9 ไม่เก็บค่าที่คำนวณได้ |
+| D-008 | ชื่อห้องเรียน | ไม่เก็บ เช่น "ม.4/2" ประกอบจาก `ClassLevel.Name` + `SectionNo` | ไม่เก็บค่าซ้ำซ้อน |
+| D-009 | `ClassSection.HomeroomId` | ตีความเป็นครูประจำชั้น (FK → Teacher) | SPEC ไม่ระบุ — คำถามค้างข้อ 3 |
+| D-010 | `StudyPlan` | ตาราง `StudyPlan` + ตารางเชื่อม `StudyPlanSection` (ห้องเดียวมีหลายแผนได้); `Lesson.StudyPlanId` (nullable) สำหรับวิชาเลือก | SPEC ข้อ 3, 6 (จองเวลาวิชาเลือกรายแผน) |
+| D-011 | `Reservation` | เป้าหมาย = StudyPlan / Teacher / Room (ต้องมีอย่างน้อย 1 — CHECK constraint), มี `LoadType` (3/4) และ `DayNo`/`PeriodNo` | SPEC ข้อ 3 |
+| D-012 | `BreakSlot` | `ScheduleModeId` + `SectionId` + `DayNo` + `PeriodNo` (unique) — แยกตามโหมดเพราะโหมด 0/1 คาบต่างกัน | SPEC ข้อ 3, 6 |
+| D-013 | License | เก็บที่ `School`: `Plan` (Trial/Licensed/Expired), `MaxSectionsPerLevel` (=license tier), `ExpiresAt`, `TrialPlacementCap` (200); ไม่มีคอลัมน์ `LicenseTier` แยก | SPEC ข้อ 8 — `LicenseTier` กับ `MaxSectionsPerLevel` คือค่าเดียวกัน |
+| D-014 | Enum ใน DB | `RoomType` (R/L), `SubjectRule.Type` (C/U/S), `School.Plan` เก็บเป็นตัวอักษร; `LoadType`, `ScheduleMode.Mode` เก็บเป็นตัวเลข | อ่านง่ายและตรงกับระบบเดิม |
+| D-015 | Cascade delete | Restrict ทั้งหมด ยกเว้น: ClassSection→Lesson/BreakSlot/StudyPlanSection, Lesson→Placement/LessonTeacher, Snapshot→Placement, StudyPlan→StudyPlanSection | SPEC ข้อ 11: ลบห้อง = ลบ Lesson/Placement ใน transaction เดียว; ไม่มี ID ห้อย. "ลบ Lesson ที่อยู่ใน Snapshot ต้องถามก่อน" จะทำที่ API (M1) |
+| D-016 | Multi-tenant | global query filter (`BypassFilter \|\| SchoolId == CurrentSchoolId`) อ่าน tenant จาก JWT ต่อ request (`HttpTenantContext`, scoped, ไม่มี static); tenant ไม่ทราบ = ไม่เห็นอะไร; `SaveChanges` ปฏิเสธการเขียนข้ามโรงเรียน; endpoint ตรวจ `schoolId` ใน URL อีกชั้น (403) | SPEC ข้อ 8 / CLAUDE.md กฎข้อ 3 |
+| D-017 | Auth | JWT HS256, claim `role` + `school_id`; รหัสผ่าน PBKDF2 (ASP.NET Identity `PasswordHasher`); SuperAdmin มี `SchoolId = null` | |
+| D-018 | Secret | dev: `dotnet user-secrets` (Api มี `UserSecretsId`) หรือ `.env` สำหรับ compose; deploy: env var; compose ประกอบ connection string จาก `Database__Server/User/Password` จึงไม่มี connection string ใน git | CLAUDE.md กฎข้อ 8 |
+| D-019 | Seed | runtime seeder (idempotent) เมื่อ `Seed__Enabled=true`: โรงเรียน DEMO01 (Trial), เทอม 2569/1, โหมด 0 (8 คาบ, พัก P5) และโหมด 1 (10 คาบ, พัก P6, วัน ร.ด. = 3), ระดับ 11/21/34 ระดับละ 2 ห้อง, ครู `ครู 001`–`ครู 010`, วิชา 8 (G 1–8), แผน วิทย์-คณิต/ศิลป์-ภาษา; user `superadmin`/`admin`/`viewer` รหัสจาก `SEED_USER_PASSWORD` | รหัสผ่านต้องมาจาก env จึงใส่ใน migration ไม่ได้; คาบพักเป็นข้อมูล seed ไม่ hardcode ในกฎ |
+| D-020 | Importer guard | `ImportSourceGuard.Validate` ยอมรับเฉพาะ `Sch69_Import`/`SchKUS_Import` + `ApplicationIntent=ReadOnly` (มี test) | CLAUDE.md กฎเหล็กข้อ 1 — ตัว importer จริงทำใน M1 |
+| D-021 | Solver | M0 มีแค่สัญญา `ISolver`/`SolverInput`/`SolverResult` + test ว่า assembly ไม่อ้าง EF/SqlClient/Dapper/Infrastructure | CLAUDE.md ข้อ 1, 8 |
+| D-022 | Test | xUnit + FluentAssertions **7.0.0** (v8 เปลี่ยนเป็น license เชิงพาณิชย์) + Testcontainers SQL Server; ตั้ง `ES_TEST_SQLSERVER` เพื่อใช้ server ที่มีอยู่ | |
+| D-023 | E2E | Playwright อยู่ใน `tests/e2e` แต่ติดตั้ง/รันจาก `web/` (`cd web && npx playwright test`), `tests/e2e/tsconfig.json` ชี้ `@playwright/test` ไปที่ `web/node_modules`; รันกับ stack จริงจาก compose | ตรง layout และคำสั่งใน CLAUDE.md |
+| D-024 | Web | React 18 + TS + Vite 5 + Tailwind 4 + TanStack Query; ข้อความ UI ใน `web/src/i18n/th.ts`; ESLint ห้าม `any`; ฟอนต์ Noto Sans Thai bundle ผ่าน `@fontsource` (on-prem ไม่มีเน็ตก็ใช้ได้); dnd-kit จะเพิ่มตอน M4 | CLAUDE.md ข้อ 1, 8 |
+| D-025 | Web serving | nginx เสิร์ฟ static + proxy `/api`, `/swagger` → origin เดียว ไม่ต้อง CORS; build stage ใช้ `node:22-bookworm-slim` (rollup บน alpine/musl build ไม่ผ่าน) | |
+| D-026 | Commit | ข้อความ commit `m0: …` | CLAUDE.md ข้อ 8 |
+| D-027 | ข้อความ password ตามด้วย = ใน repo | `src/docs/deployment/android.md` เป็นเอกสาร Flutter เดิมของ repo มีบรรทัด storePassword ตัวอย่าง (placeholder) — ไม่แก้ | อยู่นอกขอบเขต |

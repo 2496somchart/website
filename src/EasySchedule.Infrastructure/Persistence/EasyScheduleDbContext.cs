@@ -26,6 +26,7 @@ public class EasyScheduleDbContext(DbContextOptions<EasyScheduleDbContext> optio
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<StudyPlan> StudyPlans => Set<StudyPlan>();
+    public DbSet<StudyPlanSection> StudyPlanSections => Set<StudyPlanSection>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonTeacher> LessonTeachers => Set<LessonTeacher>();
     public DbSet<LessonGroup> LessonGroups => Set<LessonGroup>();
@@ -48,13 +49,24 @@ public class EasyScheduleDbContext(DbContextOptions<EasyScheduleDbContext> optio
                 fk.DeleteBehavior = DeleteBehavior.Restrict;
         }
 
-        // ข้อยกเว้นที่ตั้งใจ: Placement ลบตาม Snapshot และ Lesson, LessonTeacher ลบตาม Lesson
-        b.Entity<Placement>().HasOne(p => p.Snapshot).WithMany(s => s.Placements)
-            .HasForeignKey(p => p.SnapshotId).OnDelete(DeleteBehavior.Cascade);
+        // ข้อยกเว้นที่ตั้งใจ (SPEC ข้อ 11):
+        // - ลบห้องเรียน = ลบ Lesson / Placement / BreakSlot / แผนของห้องนั้นใน transaction เดียว
+        // - ลบ Snapshot = ลบ Placement ของ Snapshot นั้น
+        // - Placement ผูก FK กับ Lesson (ไม่มี ID ห้อย)
+        b.Entity<Lesson>().HasOne(l => l.Section).WithMany()
+            .HasForeignKey(l => l.SectionId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<Placement>().HasOne(p => p.Lesson).WithMany()
             .HasForeignKey(p => p.LessonId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<Placement>().HasOne(p => p.Snapshot).WithMany(s => s.Placements)
+            .HasForeignKey(p => p.SnapshotId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<LessonTeacher>().HasOne(lt => lt.Lesson).WithMany(l => l.Teachers)
             .HasForeignKey(lt => lt.LessonId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<BreakSlot>().HasOne(x => x.Section).WithMany()
+            .HasForeignKey(x => x.SectionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<StudyPlanSection>().HasOne(x => x.Section).WithMany(s => s.StudyPlans)
+            .HasForeignKey(x => x.SectionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<StudyPlanSection>().HasOne(x => x.StudyPlan).WithMany(p => p.Sections)
+            .HasForeignKey(x => x.StudyPlanId).OnDelete(DeleteBehavior.Cascade);
 
         // Global query filter ตาม SchoolId ทุก entity ที่เป็น ITenantEntity
         foreach (var type in b.Model.GetEntityTypes().Where(t => typeof(ITenantEntity).IsAssignableFrom(t.ClrType)))

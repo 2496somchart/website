@@ -1,24 +1,23 @@
 namespace EasySchedule.Domain.Enums;
 
 /// <summary>
-/// ประเภทภาระงานของครู (LoadTypeID 1-7 ตาม SPEC). ค่าตัวเลขถูกเก็บลงฐานข้อมูล ห้ามเปลี่ยน.
-/// ชื่อภาษาไทยสำหรับแสดงผลอยู่ที่ <see cref="LoadTypeExtensions.ToThai"/>
+/// ประเภทภาระงาน (LoadTypeID 1-7) — คงค่าเดิมเพื่อ import จาก Sch69 ได้ตรง ห้ามเปลี่ยนตัวเลข
 /// </summary>
 public enum LoadType
 {
-    /// <summary>บริหาร</summary>
+    /// <summary>บริหาร — ภาระบริหาร ไม่ถูกจัดลงตาราง (H14)</summary>
     Administration = 1,
-    /// <summary>กิจกรรม</summary>
+    /// <summary>กิจกรรม เช่น ร.ด.</summary>
     Activity = 2,
-    /// <summary>สอนคณะ</summary>
+    /// <summary>สอนคณะ — การกันเวลาครู</summary>
     TeamTeaching = 3,
-    /// <summary>ส่วนบุคคล</summary>
+    /// <summary>ส่วนบุคคล — การกันเวลาครู (เช่น พบแพทย์)</summary>
     Personal = 4,
-    /// <summary>สอน</summary>
+    /// <summary>สอน — วิชาปกติ</summary>
     Teaching = 5,
-    /// <summary>เลือกเสรี</summary>
+    /// <summary>เลือกเสรี — วิชาเลือก</summary>
     FreeElective = 6,
-    /// <summary>พัก</summary>
+    /// <summary>พัก — คาบพัก (แยกจาก 5 เพื่อไม่ให้เข้ากฎ H10)</summary>
     Break = 7,
 }
 
@@ -35,6 +34,9 @@ public static class LoadTypeExtensions
         LoadType.Break => "พัก",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
+
+    /// <summary>LoadType 3/4 = การกันเวลาครู</summary>
+    public static bool IsTeacherReservation(this LoadType type) => type is LoadType.TeamTeaching or LoadType.Personal;
 }
 
 public enum UserRole
@@ -44,14 +46,31 @@ public enum UserRole
     Viewer = 3,
 }
 
-/// <summary>วันในสัปดาห์ของตารางสอน (1 = จันทร์ … 7 = อาทิตย์)</summary>
-public enum SchoolDay
+/// <summary>0 = ปกติ (5 วัน × 8 คาบ), 1 = ร.ด. (4 วัน × 10 คาบ + วัน ร.ด.)</summary>
+public enum ScheduleModeType
 {
-    Monday = 1,
-    Tuesday = 2,
-    Wednesday = 3,
-    Thursday = 4,
-    Friday = 5,
-    Saturday = 6,
-    Sunday = 7,
+    Normal = 0,
+    Military = 1,
+}
+
+public enum LicensePlan
+{
+    Trial = 0,
+    Licensed = 1,
+    Expired = 2,
+}
+
+/// <summary>ประเภทห้อง: R = ห้องเรียน, L = ห้องปฏิบัติการ</summary>
+public enum RoomType
+{
+    R = 0,
+    L = 1,
+}
+
+/// <summary>SubjectRule: C = ต้องต่อเนื่อง, U = ห้ามวันเดียวกัน, S = ต้องเรียงลำดับ</summary>
+public enum SubjectRuleType
+{
+    C = 0,
+    U = 1,
+    S = 2,
 }

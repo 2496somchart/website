@@ -1,12 +1,13 @@
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>ภาคเรียน เช่น ปีการศึกษา 2569 ภาคเรียนที่ 1</summary>
+/// <summary>ปี/เทอมของ<b>งานจัดตาราง</b> (= SchYr/SchTr เดิม) ไม่ใช่ปีทะเบียน (Yr/Tr)</summary>
 public class Term : TenantEntity
 {
-    public int AcademicYear { get; set; }
-    public int Semester { get; set; }
-    public required string Name { get; set; }
-    public DateOnly? StartDate { get; set; }
-    public DateOnly? EndDate { get; set; }
+    /// <summary>ปีการศึกษา พ.ศ. เช่น 2569</summary>
+    public int Year { get; set; }
+
+    /// <summary>เทอม 1 หรือ 2 (ชื่อ Term ใช้ไม่ได้เพราะซ้ำกับชื่อ class)</summary>
+    public int TermNo { get; set; }
+
     public bool IsActive { get; set; }
 }

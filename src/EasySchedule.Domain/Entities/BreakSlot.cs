@@ -1,16 +1,15 @@
 namespace EasySchedule.Domain.Entities;
 
 /// <summary>
-/// ช่วงพัก (พักกลางวัน/พักเบรก) ต่อจากคาบที่ AfterPeriod.
-/// ClassLevelId = null หมายถึงค่าเริ่มต้นของทั้งโรงเรียน; Day = null หมายถึงทุกวัน
+/// คาบพักรายห้อง-รายวัน (SectionId × DayNo × PeriodNo) แยกตามโหมด.
+/// ค่าเริ่มต้นตั้งให้ตรงกันทั้งโรงเรียน แล้วแก้ได้อิสระทุกระดับ ทุกห้อง ทุกวัน
 /// </summary>
-public class BreakSlot : TenantEntity
+public class BreakSlot : TermEntity
 {
-    public required string Name { get; set; }
-    public int AfterPeriod { get; set; }
-    public TimeOnly StartTime { get; set; }
-    public TimeOnly EndTime { get; set; }
-    public Enums.SchoolDay? Day { get; set; }
-    public int? ClassLevelId { get; set; }
-    public ClassLevel? ClassLevel { get; set; }
+    public int ScheduleModeId { get; set; }
+    public ScheduleMode? ScheduleMode { get; set; }
+    public int SectionId { get; set; }
+    public ClassSection? Section { get; set; }
+    public int DayNo { get; set; }
+    public int PeriodNo { get; set; }
 }

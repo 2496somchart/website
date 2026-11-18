@@ -1,10 +1,8 @@
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>กลุ่มคาบที่ต้องลงเวลาเดียวกัน เช่น วิชาเลือก/ชุมนุม ที่หลายห้องเรียนพร้อมกัน</summary>
-public class LessonGroup : TenantEntity
+/// <summary>กลุ่ม Lesson ที่ต้องวางคาบเดียวกัน (team teaching, วิชาเลือกคู่ขนาน)</summary>
+public class LessonGroup : TermEntity
 {
-    public int TermId { get; set; }
-    public Term? Term { get; set; }
     public required string Name { get; set; }
     public List<Lesson> Lessons { get; set; } = [];
 }

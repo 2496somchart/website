@@ -3,10 +3,12 @@ WORKDIR /src
 COPY Directory.Build.props EasySchedule.sln ./
 COPY src/EasySchedule.Domain/EasySchedule.Domain.csproj src/EasySchedule.Domain/
 COPY src/EasySchedule.Infrastructure/EasySchedule.Infrastructure.csproj src/EasySchedule.Infrastructure/
+COPY src/EasySchedule.Solver/EasySchedule.Solver.csproj src/EasySchedule.Solver/
 COPY src/EasySchedule.Api/EasySchedule.Api.csproj src/EasySchedule.Api/
 RUN dotnet restore src/EasySchedule.Api/EasySchedule.Api.csproj
 COPY src/EasySchedule.Domain/ src/EasySchedule.Domain/
 COPY src/EasySchedule.Infrastructure/ src/EasySchedule.Infrastructure/
+COPY src/EasySchedule.Solver/ src/EasySchedule.Solver/
 COPY src/EasySchedule.Api/ src/EasySchedule.Api/
 RUN dotnet publish src/EasySchedule.Api/EasySchedule.Api.csproj -c Release -o /app --no-restore
 

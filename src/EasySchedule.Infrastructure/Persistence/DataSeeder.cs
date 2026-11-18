@@ -6,25 +6,31 @@ using Microsoft.Extensions.Logging;
 
 namespace EasySchedule.Infrastructure.Persistence;
 
-/// <summary>ข้อมูลตัวอย่าง: โรงเรียนเล็ก 1 แห่ง (ป.1, ม.1, ม.4 ระดับละ 2 ห้อง, ครู 10, วิชา 8)</summary>
+/// <summary>
+/// ข้อมูลตัวอย่าง: โรงเรียนเล็ก 1 แห่ง — ป.1, ม.1, ม.4 ระดับละ 2 ห้อง, ครู 10 (ชื่อสมมติ), วิชา 8,
+/// โหมด 0 และ 1, BreakSlot ค่าเริ่มต้นตรงกันทั้งโรงเรียน
+/// </summary>
 public sealed class DataSeeder(EasyScheduleDbContext db, IPasswordService passwords, ILogger<DataSeeder> logger)
 {
-    public const string SampleSchoolCode = "DEMO01";
-    public static readonly string[] SampleUsernames = ["superadmin", "admin", "viewer"];
+    public const string SampleSchCode = "DEMO01";
+
+    /// <summary>คาบพักค่าเริ่มต้น (PeriodNo) ของแต่ละโหมด — เป็นข้อมูล seed แก้ได้ทีหลังรายห้อง-รายวัน</summary>
+    public const int DefaultBreakPeriodMode0 = 5;
+    public const int DefaultBreakPeriodMode1 = 6;
 
     public async Task SeedAsync(string? userPassword, CancellationToken ct = default)
     {
         if (!db.BypassTenantFilter)
             throw new InvalidOperationException("DataSeeder must run with SystemTenantContext.");
 
-        var school = await db.Schools.FirstOrDefaultAsync(s => s.Code == SampleSchoolCode, ct);
+        var school = await db.Schools.FirstOrDefaultAsync(s => s.SchCode == SampleSchCode, ct);
         if (school is null)
         {
-            school = new School { Code = SampleSchoolCode, Name = "โรงเรียนตัวอย่างวิทยา", Address = "อำเภอเมือง จังหวัดตัวอย่าง" };
+            school = new School { SchCode = SampleSchCode, Name = "โรงเรียนตัวอย่างวิทยา", Plan = LicensePlan.Trial, MaxSectionsPerLevel = 4 };
             db.Schools.Add(school);
             await db.SaveChangesAsync(ct);
             await SeedSchoolDataAsync(school.Id, ct);
-            logger.LogInformation("Seeded sample school {Code} (id {Id})", school.Code, school.Id);
+            logger.LogInformation("Seeded sample school {Code} (id {Id})", school.SchCode, school.Id);
         }
 
         await SeedUsersAsync(school.Id, userPassword, ct);
@@ -32,68 +38,83 @@ public sealed class DataSeeder(EasyScheduleDbContext db, IPasswordService passwo
 
     private async Task SeedSchoolDataAsync(int schoolId, CancellationToken ct)
     {
-        db.Terms.Add(new Term { SchoolId = schoolId, AcademicYear = 2569, Semester = 1, Name = "ภาคเรียนที่ 1/2569", IsActive = true });
+        var term = new Term { SchoolId = schoolId, Year = 2569, TermNo = 1, IsActive = true };
+        db.Terms.Add(term);
 
-        var mode = new ScheduleMode { SchoolId = schoolId, Name = "ตารางปกติ", DaysPerWeek = 5, PeriodsPerDay = 8 };
-        (int n, string s, string e)[] periods =
-        [
-            (1, "08:30", "09:20"), (2, "09:20", "10:10"), (3, "10:20", "11:10"), (4, "11:10", "12:00"),
-            (5, "13:00", "13:50"), (6, "13:50", "14:40"), (7, "14:40", "15:30"), (8, "15:30", "16:20"),
-        ];
-        foreach (var p in periods)
-            mode.Periods.Add(new Period { SchoolId = schoolId, Number = p.n, StartTime = TimeOnly.Parse(p.s), EndTime = TimeOnly.Parse(p.e) });
-        db.ScheduleModes.Add(mode);
+        // โหมด 0: 5 วัน × 8 คาบ (+ P0 โฮมรูม)
+        var mode0 = new ScheduleMode { SchoolId = schoolId, Term = term, Mode = ScheduleModeType.Normal, DaysList = [2, 3, 4, 5, 6], PeriodPerDay = 8 };
+        AddPeriods(mode0, schoolId, term, new TimeOnly(8, 0), homeroomMinutes: 20, firstStart: new TimeOnly(8, 30), minutes: 50, count: 8);
 
-        // BreakSlot ค่าเริ่มต้นตรงกันทั้งโรงเรียน (ClassLevelId = null, ทุกวัน)
-        db.BreakSlots.AddRange(
-            new BreakSlot { SchoolId = schoolId, Name = "พักเบรก", AfterPeriod = 2, StartTime = new(10, 10), EndTime = new(10, 20) },
-            new BreakSlot { SchoolId = schoolId, Name = "พักกลางวัน", AfterPeriod = 4, StartTime = new(12, 0), EndTime = new(13, 0) });
+        // โหมด 1: 4 วัน × 10 คาบ + วัน ร.ด. 1 วัน
+        var mode1 = new ScheduleMode { SchoolId = schoolId, Term = term, Mode = ScheduleModeType.Military, DaysList = [2, 3, 4, 5, 6], PeriodPerDay = 10, MilitaryDay = 3 };
+        AddPeriods(mode1, schoolId, term, new TimeOnly(8, 0), homeroomMinutes: 20, firstStart: new TimeOnly(8, 20), minutes: 40, count: 10);
+        db.ScheduleModes.AddRange(mode0, mode1);
 
-        (string code, string name, int order)[] levels = [("P1", "ป.1", 1), ("M1", "ม.1", 7), ("M4", "ม.4", 10)];
-        foreach (var l in levels)
+        (int code, string name)[] levels = [(11, "ป.1"), (21, "ม.1"), (34, "ม.4")];
+        var sections = new List<ClassSection>();
+        foreach (var (code, name) in levels)
         {
-            var level = new ClassLevel { SchoolId = schoolId, Code = l.code, Name = l.name, SortOrder = l.order, ScheduleMode = mode };
-            for (var i = 1; i <= 2; i++)
-                level.Sections.Add(new ClassSection { SchoolId = schoolId, Number = i, Name = $"{l.name}/{i}" });
+            var level = new ClassLevel { SchoolId = schoolId, Term = term, Code = code, Name = name, StartPeriod = 1, EndPeriod = 10 };
+            for (var no = 1; no <= 2; no++)
+            {
+                var section = new ClassSection { SchoolId = schoolId, Term = term, SectionNo = no };
+                level.Sections.Add(section);
+                sections.Add(section);
+            }
             db.ClassLevels.Add(level);
         }
 
-        (string first, string last, string dept)[] teachers =
-        [
-            ("สมชาย", "ใจดี", "ภาษาไทย"), ("สมหญิง", "รักเรียน", "คณิตศาสตร์"), ("วิชัย", "เก่งกล้า", "วิทยาศาสตร์และเทคโนโลยี"),
-            ("มาลี", "ศรีสุข", "สังคมศึกษา ศาสนา และวัฒนธรรม"), ("ประเสริฐ", "มั่นคง", "สุขศึกษาและพลศึกษา"),
-            ("กมลา", "งามตา", "ศิลปะ"), ("ธนา", "พากเพียร", "การงานอาชีพ"), ("อรุณี", "แสงทอง", "ภาษาต่างประเทศ"),
-            ("ณัฐพล", "บุญมา", "คณิตศาสตร์"), ("ปิยะนุช", "ทองดี", "ภาษาไทย"),
-        ];
-        for (var i = 0; i < teachers.Length; i++)
+        // BreakSlot ค่าเริ่มต้นตรงกันทั้งโรงเรียน: ทุกห้อง ทุกวัน
+        foreach (var section in sections)
         {
-            var t = teachers[i];
-            db.Teachers.Add(new Teacher
+            foreach (var day in mode0.DaysList)
             {
-                SchoolId = schoolId, Code = $"T{i + 1:00}", Prefix = i % 2 == 0 ? "นาย" : "นาง",
-                FirstName = t.first, LastName = t.last, Department = t.dept, MaxPeriodsPerWeek = 22,
-            });
+                db.BreakSlots.Add(new BreakSlot { SchoolId = schoolId, Term = term, ScheduleMode = mode0, Section = section, DayNo = day, PeriodNo = DefaultBreakPeriodMode0 });
+                db.BreakSlots.Add(new BreakSlot { SchoolId = schoolId, Term = term, ScheduleMode = mode1, Section = section, DayNo = day, PeriodNo = DefaultBreakPeriodMode1 });
+            }
         }
 
-        (string code, string name, string area, string color)[] subjects =
+        // ครูใช้ชื่อสมมติเสมอ (CLAUDE.md กฎข้อ 10)
+        for (var i = 1; i <= 10; i++)
+            db.Teachers.Add(new Teacher { SchoolId = schoolId, Term = term, Code = $"T{i:000}", Name = $"ครู {i:000}" });
+
+        (string code, string title, string g, int ppw)[] subjects =
         [
-            ("TH", "ภาษาไทย", "ภาษาไทย", "#ef4444"),
-            ("MA", "คณิตศาสตร์", "คณิตศาสตร์", "#3b82f6"),
-            ("SC", "วิทยาศาสตร์และเทคโนโลยี", "วิทยาศาสตร์และเทคโนโลยี", "#22c55e"),
-            ("SO", "สังคมศึกษา ศาสนา และวัฒนธรรม", "สังคมศึกษา ศาสนา และวัฒนธรรม", "#eab308"),
-            ("PE", "สุขศึกษาและพลศึกษา", "สุขศึกษาและพลศึกษา", "#f97316"),
-            ("AR", "ศิลปะ", "ศิลปะ", "#a855f7"),
-            ("CA", "การงานอาชีพ", "การงานอาชีพ", "#14b8a6"),
-            ("EN", "ภาษาอังกฤษ", "ภาษาต่างประเทศ", "#ec4899"),
+            ("ท21101", "ภาษาไทย", "1", 3),
+            ("ค21101", "คณิตศาสตร์", "2", 3),
+            ("ว21101", "วิทยาศาสตร์และเทคโนโลยี", "3", 3),
+            ("ส21101", "สังคมศึกษา ศาสนา และวัฒนธรรม", "4", 3),
+            ("พ21101", "สุขศึกษาและพลศึกษา", "5", 2),
+            ("ศ21101", "ศิลปะ", "6", 2),
+            ("ง21101", "การงานอาชีพ", "7", 2),
+            ("อ21101", "ภาษาอังกฤษ", "8", 3),
         ];
-        foreach (var s in subjects)
-            db.Subjects.Add(new Subject { SchoolId = schoolId, Code = s.code, Name = s.name, LearningArea = s.area, Color = s.color });
+        foreach (var (code, title, g, ppw) in subjects)
+            db.Subjects.Add(new Subject { SchoolId = schoolId, Term = term, Code = code, Title = title, SubjectGroup = g, Credits = ppw * 0.5m, PPW = ppw, PT = 1 });
 
         db.Rooms.AddRange(
-            new Room { SchoolId = schoolId, Code = "SCI1", Name = "ห้องปฏิบัติการวิทยาศาสตร์", RoomType = "lab" },
-            new Room { SchoolId = schoolId, Code = "COM1", Name = "ห้องคอมพิวเตอร์", RoomType = "computer" });
+            new Room { SchoolId = schoolId, Term = term, Code = "R101", Name = "ห้อง 101", Type = RoomType.R, Capacity = 40 },
+            new Room { SchoolId = schoolId, Term = term, Code = "L201", Name = "ห้องปฏิบัติการวิทยาศาสตร์", Type = RoomType.L, Capacity = 40 });
+
+        // แผนการเรียนเป็นตารางลูก: ม.4/1 = วิทย์-คณิต, ม.4/2 = ศิลป์-ภาษา
+        var m4 = sections.Where(s => s.Level!.Code == 34).OrderBy(s => s.SectionNo).ToList();
+        var sciMath = new StudyPlan { SchoolId = schoolId, Term = term, Name = "วิทย์-คณิต" };
+        sciMath.Sections.Add(new StudyPlanSection { SchoolId = schoolId, Section = m4[0] });
+        var artLang = new StudyPlan { SchoolId = schoolId, Term = term, Name = "ศิลป์-ภาษา" };
+        artLang.Sections.Add(new StudyPlanSection { SchoolId = schoolId, Section = m4[1] });
+        db.StudyPlans.AddRange(sciMath, artLang);
 
         await db.SaveChangesAsync(ct);
+    }
+
+    private static void AddPeriods(ScheduleMode mode, int schoolId, Term term, TimeOnly homeroomStart, int homeroomMinutes, TimeOnly firstStart, int minutes, int count)
+    {
+        mode.Periods.Add(new Period { SchoolId = schoolId, Term = term, PeriodNo = 0, Start = homeroomStart, End = homeroomStart.AddMinutes(homeroomMinutes) });
+        for (var p = 1; p <= count; p++)
+        {
+            var start = firstStart.AddMinutes((p - 1) * minutes);
+            mode.Periods.Add(new Period { SchoolId = schoolId, Term = term, PeriodNo = p, Start = start, End = start.AddMinutes(minutes) });
+        }
     }
 
     private async Task SeedUsersAsync(int schoolId, string? password, CancellationToken ct)
@@ -107,13 +128,13 @@ public sealed class DataSeeder(EasyScheduleDbContext db, IPasswordService passwo
         (string username, string display, UserRole role, int? school)[] users =
         [
             ("superadmin", "ผู้ดูแลระบบกลาง", UserRole.SuperAdmin, null),
-            ("admin", "ผู้ดูแลโรงเรียนตัวอย่าง", UserRole.SchoolAdmin, schoolId),
-            ("viewer", "ผู้ชมโรงเรียนตัวอย่าง", UserRole.Viewer, schoolId),
+            ("admin", "ฝ่ายวิชาการ โรงเรียนตัวอย่าง", UserRole.SchoolAdmin, schoolId),
+            ("viewer", "ครู โรงเรียนตัวอย่าง", UserRole.Viewer, schoolId),
         ];
-        foreach (var u in users)
+        foreach (var (username, display, role, school) in users)
         {
-            if (await db.Users.AnyAsync(x => x.Username == u.username, ct)) continue;
-            var user = new User { Username = u.username, DisplayName = u.display, Role = u.role, SchoolId = u.school, PasswordHash = "" };
+            if (await db.Users.AnyAsync(x => x.Username == username, ct)) continue;
+            var user = new User { Username = username, DisplayName = display, Role = role, SchoolId = school, PasswordHash = "" };
             user.PasswordHash = passwords.Hash(user, password);
             db.Users.Add(user);
         }

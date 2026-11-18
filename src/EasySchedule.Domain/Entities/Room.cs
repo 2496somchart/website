@@ -1,10 +1,12 @@
+using EasySchedule.Domain.Enums;
+
 namespace EasySchedule.Domain.Entities;
 
-public class Room : TenantEntity
+/// <summary>ห้อง/แล็บ (= TblRoom)</summary>
+public class Room : TermEntity
 {
     public required string Code { get; set; }
     public required string Name { get; set; }
-    public string? Building { get; set; }
+    public RoomType Type { get; set; } = RoomType.R;
     public int? Capacity { get; set; }
-    public string? RoomType { get; set; }
 }

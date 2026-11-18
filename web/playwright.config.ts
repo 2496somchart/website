@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 // รันกับระบบที่ขึ้นอยู่แล้ว (docker compose up) — ค่าเริ่มต้น http://localhost:8080
 export default defineConfig({
-  testDir: './e2e',
+  testDir: '../tests/e2e',
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',

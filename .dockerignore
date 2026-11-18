@@ -4,6 +4,7 @@
 !EasySchedule.sln
 !src/EasySchedule.Domain/
 !src/EasySchedule.Infrastructure/
+!src/EasySchedule.Solver/
 !src/EasySchedule.Api/
 **/bin
 **/obj

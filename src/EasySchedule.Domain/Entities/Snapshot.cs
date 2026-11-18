@@ -1,14 +1,14 @@
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>ฉบับของตารางสอน (เก็บผลการจัดแต่ละครั้ง)</summary>
-public class Snapshot : TenantEntity
+/// <summary>ผลการจัดตารางแต่ละครั้ง (แทน TblZPlanPark). โหมดปัจจุบันตัดสินจาก Snapshot ที่ IsLive</summary>
+public class Snapshot : TermEntity
 {
-    public int TermId { get; set; }
-    public Term? Term { get; set; }
-    public required string Name { get; set; }
-    public bool IsPublished { get; set; }
-    public int? CreatedByUserId { get; set; }
-    public User? CreatedByUser { get; set; }
+    public int ModeId { get; set; }
+    public ScheduleMode? Mode { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+    public User? CreatedByUser { get; set; }
+    public string? Note { get; set; }
+    public bool IsLive { get; set; }
     public List<Placement> Placements { get; set; } = [];
 }

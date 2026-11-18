@@ -52,7 +52,11 @@ builder.Services.AddSwaggerGen(o =>
     o.SwaggerDoc("v1", new OpenApiInfo { Title = "EasySchedule API", Version = "v1" });
     var scheme = new OpenApiSecurityScheme
     {
-        Name = "Authorization", Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT", In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
         Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
     };
     o.AddSecurityDefinition("Bearer", scheme);

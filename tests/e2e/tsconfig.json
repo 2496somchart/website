@@ -1,0 +1,17 @@
+{
+  // Playwright ติดตั้งอยู่ใน web/ — รันด้วย `cd web && npx playwright test`
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../../web/node_modules/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "@playwright/test": ["../../web/node_modules/@playwright/test"]
+    }
+  },
+  "include": ["**/*.ts"]
+}

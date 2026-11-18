@@ -1,14 +1,19 @@
-using EasySchedule.Domain.Enums;
-
 namespace EasySchedule.Domain.Entities;
 
-/// <summary>รายวิชา เช่น ท11101 ภาษาไทย</summary>
-public class Subject : TenantEntity
+/// <summary>รายวิชา (= TblClassSubjects)</summary>
+public class Subject : TermEntity
 {
     public required string Code { get; set; }
-    public required string Name { get; set; }
-    public string? ShortName { get; set; }
-    public string? LearningArea { get; set; }
-    public LoadType DefaultLoadType { get; set; } = LoadType.Teaching;
-    public string? Color { get; set; }
+    public required string Title { get; set; }
+
+    /// <summary>กลุ่มสาระ (G) เช่น "2" คณิต, "3" วิทย์, "8" อังกฤษ, "A" กิจกรรม</summary>
+    public required string SubjectGroup { get; set; }
+
+    public decimal Credits { get; set; }
+
+    /// <summary>คาบต่อสัปดาห์ (ค่าเริ่มต้นของ Lesson)</summary>
+    public int PPW { get; set; }
+
+    /// <summary>คาบต่อครั้ง (ค่าเริ่มต้นของ Lesson)</summary>
+    public int PT { get; set; } = 1;
 }

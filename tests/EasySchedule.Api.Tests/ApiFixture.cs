@@ -9,7 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.MsSql;
 
-namespace EasySchedule.Tests;
+namespace EasySchedule.Api.Tests;
 
 /// <summary>
 /// SQL Server จริงใน Docker (Testcontainers) + API ผ่าน WebApplicationFactory.
@@ -83,10 +83,16 @@ public sealed class ApiFixture : IAsyncLifetime
         return client;
     }
 
+    public async Task<int> ActiveTermIdAsync(int schoolId)
+    {
+        await using var db = CreateDb(SystemTenantContext.Instance);
+        return await db.Terms.Where(t => t.SchoolId == schoolId && t.IsActive).Select(t => t.Id).SingleAsync();
+    }
+
     public async Task<int> SampleSchoolIdAsync()
     {
         await using var db = CreateDb(SystemTenantContext.Instance);
-        return await db.Schools.Where(s => s.Code == DataSeeder.SampleSchoolCode).Select(s => s.Id).SingleAsync();
+        return await db.Schools.Where(s => s.SchCode == DataSeeder.SampleSchCode).Select(s => s.Id).SingleAsync();
     }
 }
 

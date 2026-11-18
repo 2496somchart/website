@@ -1,5 +1,6 @@
 namespace EasySchedule.Domain.Entities;
 
+/// <summary>บันทึกการเปลี่ยนแปลง: ใคร ทำอะไร เมื่อไร</summary>
 public class AuditLog
 {
     public long Id { get; set; }

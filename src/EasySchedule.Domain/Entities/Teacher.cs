@@ -1,12 +1,13 @@
 namespace EasySchedule.Domain.Entities;
 
-public class Teacher : TenantEntity
+/// <summary>ครู (= TblTeacher). ชื่อจาก Importer เป็นชื่อสมมติ (ครู 001) เสมอ</summary>
+public class Teacher : TermEntity
 {
+    public const int DefaultMaxConsecPeriods = 2;
+
     public required string Code { get; set; }
-    public string? Prefix { get; set; }
-    public required string FirstName { get; set; }
-    public required string LastName { get; set; }
-    public string? Department { get; set; }
-    public int? MaxPeriodsPerWeek { get; set; }
-    public bool IsActive { get; set; } = true;
+    public required string Name { get; set; }
+
+    /// <summary>สอนติดกันได้ไม่เกิน (H4), 0 = ปิดการตรวจ</summary>
+    public int MaxConsecPeriods { get; set; } = DefaultMaxConsecPeriods;
 }
