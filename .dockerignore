@@ -1,0 +1,9 @@
+# ส่งเฉพาะไฟล์ที่ API ต้องใช้เข้า build context (src/ มีไฟล์เว็บไซต์เดิมของ repo ด้วย)
+*
+!Directory.Build.props
+!EasySchedule.sln
+!src/EasySchedule.Domain/
+!src/EasySchedule.Infrastructure/
+!src/EasySchedule.Api/
+**/bin
+**/obj

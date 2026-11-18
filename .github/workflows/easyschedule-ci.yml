@@ -1,0 +1,92 @@
+name: EasySchedule CI
+
+on:
+  push:
+    branches: [master, main, "feature/**"]
+  pull_request:
+
+concurrency:
+  group: easyschedule-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: dotnet build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore EasySchedule.sln
+      - run: dotnet build EasySchedule.sln --no-restore -c Release
+      # integration tests start SQL Server via Testcontainers (Docker is available on ubuntu-latest)
+      - run: dotnet test EasySchedule.sln --no-build -c Release --logger "trx;LogFileName=results.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dotnet-test-results
+          path: tests/**/TestResults/*.trx
+
+  web:
+    name: web build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  e2e:
+    name: playwright (docker compose)
+    runs-on: ubuntu-latest
+    needs: [dotnet, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env with throwaway secrets
+        run: |
+          # values are generated per run; nothing secret lives in the repo
+          {
+            printf '%s=%s\n' MSSQL_SA_PASSWORD "Ci-$(openssl rand -hex 12)-Aa1!"
+            printf '%s=%s\n' JWT_SIGNING_KEY "$(openssl rand -hex 32)"
+            printf '%s=%s\n' SEED_USER_PASSWORD "Ci-$(openssl rand -hex 8)-Aa1!"
+          } > .env
+      - run: docker compose up --build -d
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/health; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: npx playwright test
+        working-directory: web
+        run: |
+          set -a; . ../.env; set +a
+          npx playwright test
+      - if: failure()
+        run: docker compose logs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report
+      - if: always()
+        run: docker compose down -v

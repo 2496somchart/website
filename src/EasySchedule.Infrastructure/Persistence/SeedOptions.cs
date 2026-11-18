@@ -1,0 +1,12 @@
+namespace EasySchedule.Infrastructure.Persistence;
+
+public sealed class SeedOptions
+{
+    public const string Section = "Seed";
+
+    /// <summary>seed ข้อมูลตัวอย่างตอนเริ่มระบบ (ปิดใน production จริง)</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>รหัสผ่านของ user ตัวอย่าง — ต้องมาจาก env/secret เท่านั้น ห้าม commit</summary>
+    public string? UserPassword { get; set; }
+}

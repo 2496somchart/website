@@ -1,0 +1,53 @@
+# EasySchedule — สำหรับพัฒนา/ทดลอง
+#   cp .env.example .env   # แล้วแก้ค่าใน .env
+#   docker compose up --build
+#   เปิด http://localhost:8080
+name: easyschedule
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?ตั้งค่า MSSQL_SA_PASSWORD ใน .env}
+      TZ: Asia/Bangkok
+    volumes:
+      - dbdata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: src/EasySchedule.Api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      Database__Server: db
+      Database__Name: EasyScheduleWeb
+      Database__User: sa
+      Database__Password: ${MSSQL_SA_PASSWORD}
+      Database__MigrateOnStartup: "true"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?ตั้งค่า JWT_SIGNING_KEY ใน .env (อย่างน้อย 32 ตัวอักษร)}
+      Seed__Enabled: ${SEED_ENABLED:-true}
+      Seed__UserPassword: ${SEED_USER_PASSWORD:-}
+      Swagger__Enabled: ${SWAGGER_ENABLED:-true}
+    restart: unless-stopped
+
+  web:
+    build:
+      context: web
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    restart: unless-stopped
+
+volumes:
+  dbdata:
