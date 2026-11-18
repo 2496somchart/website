@@ -34,7 +34,7 @@ docker compose -f docker-compose.yml -f docker-compose.onprem.yml up -d --build
 | login แล้วเห็น "ป.1", "ม.1", "ม.4" ไทยไม่เพี้ยน | Playwright + ตรวจ screenshot | ✅ |
 | `dotnet test` ผ่าน (มี tenant isolation + Thai round-trip) | `dotnet test` | ✅ 24/24 passed — `TenantIsolationTests` (9), `ThaiTextRoundTripTests` (2), `ApiTests` (8), `ModelTests` (5) |
 | `npx playwright test` ผ่าน | `cd web && set -a && . ../.env && set +a && npx playwright test` | ✅ 3/3 passed |
-| ไม่มีรหัสผ่านใน git | `git grep -i "password="` | ✅ เจอแค่ `.env.example` และ `src/docs/deployment/android.md` (เอกสาร Flutter เดิมของ repo, เป็น placeholder — ดู D-018) |
+| ไม่มีรหัสผ่านใน git | `git grep -iE "password[=]"` | ✅ เจอแค่ `.env.example` และ `src/docs/deployment/android.md` (เอกสาร Flutter เดิมของ repo, เป็น placeholder — ดู D-018) |
 | `npm run build` | `cd web && npm ci && npm run build` | ✅ |
 
 หมายเหตุสภาพแวดล้อมที่ใช้ตรวจ: ใน sandbox ที่ทำงาน build container ต้องผ่าน proxy จึงใช้ compose override ชั่วคราว (เพิ่ม CA + proxy เฉพาะตอน build, **ไม่ได้ commit**) — Dockerfile ใน repo เป็นแบบมาตรฐาน; CI บน GitHub จะเป็นตัวยืนยันอีกชั้น

@@ -22,4 +22,4 @@
 | D-015 | Web serving | nginx เสิร์ฟไฟล์ static และ proxy `/api`, `/swagger` ไป API → origin เดียว ไม่ต้องตั้ง CORS | |
 | D-016 | Node image | build stage ใช้ `node:22-bookworm-slim` ไม่ใช่ alpine | rollup บน musl build ไม่ผ่าน ("Code is nested too deeply") |
 | D-017 | E2E | Playwright รันกับ stack จริงจาก `docker compose` (baseURL `E2E_BASE_URL`, ค่าเริ่มต้น `http://localhost:8080`) | ตรวจเกณฑ์ "login → เห็นระดับชั้น" แบบ end-to-end |
-| D-018 | `password=` ใน repo | `src/docs/deployment/android.md` (เนื้อหาเว็บไซต์ Flutter เดิมของ repo) มีข้อความ `storePassword=<password from previous step>` — เป็นเอกสารตัวอย่าง ไม่ใช่ความลับ ไม่ได้แก้ | อยู่นอกขอบเขต M0 |
+| D-018 | ข้อความ password+`=` ใน repo | `src/docs/deployment/android.md` (เนื้อหาเว็บไซต์ Flutter เดิมของ repo) มีบรรทัด storePassword ตัวอย่างพร้อม placeholder `<password from previous step>` — เป็นเอกสารตัวอย่าง ไม่ใช่ความลับ ไม่ได้แก้ | อยู่นอกขอบเขต M0 |
